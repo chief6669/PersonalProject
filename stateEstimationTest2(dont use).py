@@ -2,7 +2,7 @@ import math
 import numpy
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
-#Next step is to get euler angles back from rotation matrix over time so that I can see how it changes (shouldnt change)
+
 def main():
 	#First define time vector
 	tInitial = 0
@@ -48,17 +48,36 @@ def main():
 	for t in range(1,len(time)):
 		w=angularVelocity[t]
 		al=localAcceleration[t]
-		#Calculate my rotaional velocity matrix
-		omega=[[0,-w[2],w[1]],
-			   [w[2],0,-w[0]],
-			   [-w[1],w[0],0]]
-		#Update the rotation matrix
-		omega=omega*(time[t]-time[t-1])
-		intermediate = numpy.add(omega,identity)
-		#print intermediate
-		rotationMatrix=numpy.dot(rotationMatrix,intermediate)
-		#Normalize Matrix
-		rotationMatrix=numpy.divide(rotationMatrix,numpy.cbrt(numpy.linalg.det(rotationMatrix)))
+
+		previousRoll = roll
+		previousPitch = pitch
+		previousYaw = yaw
+
+		#Update my roll, pitch and yaw
+		thetaDot = [w[0],w[1],w[2]]
+		#Update theta dot
+		thetaDot=numpy.dot(rotationMatrix,thetaDot)
+		roll = roll + thetaDot[0]*(time[t]-time[t-1])
+		pitch = pitch + thetaDot[1]*(time[t]-time[t-1])
+		yaw = yaw + thetaDot[2]*(time[t]-time[t-1])
+
+		rollDiff = roll-previousRoll
+		pitchDiff = pitch-previousPitch
+		yawDiff = yaw-previousYaw
+
+		#Update my Rotation matrices
+		rollMatrix = [[1, 0, 0],
+				  	  [0, math.cos(roll), -math.sin(roll)],
+				  	  [0, math.sin(roll), math.cos(roll)]]
+		pitchMatrix = [[math.cos(pitch), 0, math.sin(pitch)],
+				   	   [0, 1, 0],
+				   	   [-math.sin(pitch), 0, math.cos(pitch)]]
+		yawMatrix = [[math.cos(yaw), -math.sin(yaw), 0],
+				 	 [math.sin(yaw), math.cos(yaw), 0],
+				     [0, 0, 1]]
+		#Update overall rotation matrix
+		rotationMatrix = numpy.dot(rollMatrix,pitchMatrix)
+		rotationMatrix = numpy.dot(rotationMatrix, yawMatrix)
 		#convert acceleration to global coordinates
 		ag=numpy.dot(rotationMatrix,al)
 		#Remove gravity term from ag
@@ -67,6 +86,7 @@ def main():
 		vg[t]=vg[t-1]+ag*(time[t]-time[t-1])
 		#integrate to get position
 		rg[t]=rg[t-1]+vg[t]*(time[t]-time[t-1])
+	#Next step is to figure out how to plot the position so that I can test variation in the code
 	#Starting Plot Section to help with Debugging of state estimation program
 	xData = []
 	yData = []
