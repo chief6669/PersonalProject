@@ -51,7 +51,7 @@ When we receive data from the IMU it is always in reference to the local frame. 
 \begin{center}
 \textbf{Rotations}
 \end{center}
-Lets start with a simple rotation on a 2D axis. We will use x and y. Lets call the global axes xg and yg, while the local axes will be xL and yL. We will start with an example, lets say I have a point which is at (10,8) in the local frame, and I know the local frame has been rotated by 30 degree from the global frame. This example is shown in figure \ref{fig:example1}.
+Lets start with a simple rotation on a 2D axis. We will use x and y. Lets call the x and y magnitudes in the global frame $x_{g}$ and $y_{g}$, while the local frame magnitudes will be $x_{l}$ and $y{l}$. We will start with an example, lets say I have a point which is at (10,8) in the local frame, and I know the local frame has been rotated by 30 degree from the global frame. This example is shown in figure \ref{fig:example1}.
 
 \begin{figure}[H]
 	\centering
@@ -60,6 +60,48 @@ Lets start with a simple rotation on a 2D axis. We will use x and y. Lets call t
 	\caption{Example to transform a point from the local frame to the global frame}
 	\label{fig:example1}
 \end{figure}
+
+Visually you can see that I would have to do some trigonometry to obtain my position in the global frame. First we want to see what my x coordinate would be in the global frame.
+
+Because of the rotation the x component in the local frame exists on both sides of the y axis. So to figure out our global x component we will have to consider the part on the right side of the y axis as well as the left side of the y axis. We can first find the whole component as if it were to the right of the y axis by taking the magnitude of $x_{l}$ multiplied by $cos(\theta)$ which would be $10*cos(30)$. Now we need to subtract out the component to the left of the y axis. If you look carefully you can see that component is equivalent to the magnitude $y_{l}$ multipliled by $sin(\theta)$ which would be $8*sin(30)$.\\\\
+We can use the same thought process to calculate the global y component. The global frame will be calculated in 2 parts, first we consider the contribution of the local y axis which is the magnitude of $y_{l}$ multiplied by $cos(\theta)$ or $8*cos(30)$. The second part is the contribution of the local x axis which is the magnitude of $x_{l}$ multiplied by $sin(\theta)$ or $10*sin(30)$. It might be difficult to understand from the explanation above, hopefully you can come to the same conclusion by looking at the figure. Finally you arrive at the equations below:\\
+
+	\begin{align*}
+	x_{g} &= 10*cos(30)-8*sin(30) \approx 4.66\\
+	y_{g} &= 10*sin(30)+8*cos(30) \approx 11.93
+	\end{align*}
+From this we infer that the location of the point in the global frame is actually (4.66,11.93)
+\begin{figure}[H]
+	\centering
+	\textbf{Global Frame Coordinate}\par\medskip
+	\fbox{\includegraphics[scale=.7]{GlobalFrameCoordinate}}
+	\caption{Final coordinate in the global frame}
+	\label{fig:GlobalFrameCoordinate}
+\end{figure}
+
+Now that we have completed this example lets try generalizing the equations we came up with. Our rotation angle is $\theta$, local x and y magintudes are $x_{l}$ and $y_{l}$, and our global x and y magnitudes are $x_{g}$ and $y_{g}$.
+	\begin{align*}
+	x_{g} &= x_{l}cos(\theta)-y_{l}sin(\theta)\\
+	y_{g} &= x_{l}sin(\theta)+y_{l}cos(\theta)
+	\end{align*}
+We can also put this into a matrix form:
+\begin{math}
+	\begin{bmatrix}
+	x_{g}\\
+	y_{g}
+	\end{bmatrix}=
+	\begin{bmatrix}
+	cos(\theta)&-sin(\theta)\\
+	sin(\theta)&cos(\theta)
+	\end{bmatrix}*
+	\begin{bmatrix}
+	x_{l}\\
+	y_{l}
+	\end{bmatrix}
+\end{math}\\
+To generalize even further we can say: $r_{g} = R(\theta)*r_{l}$ where $r_{g}$ is my global position, $r_{l}$ is my local position, and $R(\theta)$ is called a rotation matrix. The conclusion here is that any point in the local frame can be converted to a point in the global frame via a rotational matrix, and all you need to keep track of is how the local frame has rotated ($\theta$) with respect to the global frame. In the next section we will cover 3 dimensional rotations.
+
+
 
 %\newpage      Command to start a new page dont forget
 
