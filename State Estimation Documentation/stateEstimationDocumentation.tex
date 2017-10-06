@@ -14,6 +14,11 @@
 %\duedate{9/29/2017}
 
 \begin{document}
+Code files chronological order (Not part of this paper but I wanted it to be documented somewhere)\\
+stateEstimationTest3D\\
+stateEstimationTest2D\\
+stateEstimationTest2Dkf\\
+stateEstimationTest3Dkf
 \begin{center}
 \textbf{Introduction}
 \end{center}
@@ -99,10 +104,101 @@ We can also put this into a matrix form:
 	y_{l}
 	\end{bmatrix}
 \end{math}\\
-To generalize even further we can say: $r_{g} = R(\theta)*r_{l}$ where $r_{g}$ is my global position, $r_{l}$ is my local position, and $R(\theta)$ is called a rotation matrix. The conclusion here is that any point in the local frame can be converted to a point in the global frame via a rotational matrix, and all you need to keep track of is how the local frame has rotated ($\theta$) with respect to the global frame. In the next section we will cover 3 dimensional rotations.
+To generalize even further we can say: $r_{g} = R(\theta)*r_{l}$ where $r_{g}$ is my global position, $r_{l}$ is my local position, and $R(\theta)$ is called a rotation matrix. The conclusion here is that any point in the local frame can be converted to a point in the global frame via a rotational matrix, and all you need to keep track of is how the local frame has rotated ($\theta$) with respect to the global frame. In the next section we will cover 3 dimensional rotations.\\
 
+\textbf{3D Rotations:} The 3D coordinate system has a third axis known as the z axis protruding out of the x-y plane. 3D rotations are the exact same thing as 2D rotations. If you think about it carefully the 2 dimensional rotation example that we did earlier was actually a 3D rotation about the z axis. When we do 3D rotations we are going to specify 2D rotations about each of the 3 axes then combine them into one matrix. You can try to derive them yourself using the technique we went through for the 2D rotations, but I will provide them in the list below:\\\\
+\begin{math}
+	R_x(\alpha) = 
+	\begin{bmatrix}
+	1&0&0\\
+	0&cos(\alpha)&-sin(\alpha)\\
+	0&sin(\alpha)&cos(\alpha)
+	\end{bmatrix}\\\\
+	R_y(\beta) = 
+	\begin{bmatrix}
+	cos(\beta)&0&sin(\beta)\\
+	0&1&0\\
+	-sin(\beta)&0&cos(\beta)
+	\end{bmatrix}\\\\
+	R_z(\gamma) = 
+	\begin{bmatrix}
+	cos(\gamma)&-sin(\gamma)&0\\
+	sin(\gamma)&cos(\gamma)&0\\
+	0&0&1
+	\end{bmatrix}
+\end{math}\\
+Finally it can be shown that your total rotation matrix about all three axis is actually the multiplication of all 3 rotation matrices:
+\begin{math}
+R_{xyz}(\alpha,\beta,\gamma) = R_x(\alpha)*R_y(\beta)*R_z(\gamma)
+\end{math}
 
+\begin{center}
+\textbf{Localization Algorithm}
+\end{center}
 
+This section will finally discuss how we use all of the techniques we learned thus far to convert IMU data into a position and orientation in the global frame. Back to the problem statement our IMU is fixed to the local frame but we care about the state of our device in the global frame. The first step is to provide our initial rotation matrix for the system, typically your device will start in a state of $\alpha = 0, \beta = 0, \gamma = 0$ thus we plug in those values and obtain our rotation matrix $R(\alpha,\beta,\gamma)$ and it would be equivalent to the identiy matrix.
+
+The next step is to update our rotation matrix $R(t)$ given $\omega_L(t)$. There are two ways to accomplish this: 1) you can update your values for $\alpha, \beta, \gamma$ by integrating the rotational velocity measurements $\omega_L(t)$ then updating your rotation matrix with the new values. 2) Another slick way to update the rotation matrix is to generate a rotaional velocity matrix. The rotational velocity matrix $\Omega(t)$ can be shown to equal $\frac{dR(t)}{dt}$ or the derivative of the rotation matrix. To update the rotation matrix you just need to integrate this rotational velocity matrix which can be done using the following equation:
+\begin{math}
+	\Omega(t) =
+	\begin{bmatrix}
+	0&-\omega_z(t)&\omega_y(t)\\
+	\omega_z(t)&0&-\omega_x(t)\\
+	-\omega_y(t)&\omega_x(t)&0
+	\end{bmatrix}\\\\
+	R(t+\delta t) = R(t)[I+\Omega*\delta t]\\\\
+$Then I normalized the rotation matrix by the cubic root of the determinant of the rotation matrix, that way the determinant of the resulting matrix would be one$\\\\
+	R(t) = \frac{R(t)}{\sqrt[3]{det(R(t))}}\\\\
+\end{math}
+Now we can gather the orientation $(\alpha, \beta, \gamma)$ from our updated rotation matrix. You can go online to find formulas to back track the angles from the rotation matrix, or you could do the math yourself using the rotation matrix formulas shown above.\\
+\begin{math}
+\alpha = arctan(R_{3,2}(t),R_{3,3}(t))\\
+\beta = arctan(R_{3,1}(t),\sqrt{R_{3,2}(t)^{2}+R_{3,3}(t)^{2}})\\
+\gamma = arctan(R_{2,1}(t),R_{1,1}(t))
+\end{math}
+
+From here we use the update rotation matrix to convert the local acceleration to the global frame, then integrate to obtain position.\\
+\begin{math}
+a_g(t) = R(t)*a_l\\
+$ (at this point if you were considering gravity you would subtract it from the z component of global acceleration)$\\
+v_g(t) = v_g(t-1) +a_g(\delta t)\\
+r_g(t) = r_g(t-1) + v_g(\delta t)
+\end{math}
+
+At this point we have generated position$(r_g(t))$ and orientation $(\alpha, \beta, \gamma)$ from the given local acceleration and local angular velocity data.\\
+
+\begin{center}
+\textbf{Example}
+\end{center}
+Lets consider an example set of data. I want my simulated drone to accelerate in the x direction for 1 second, at some point pitch then accelerate in the new direction for one second. The example data set will have $(a_{xl},a_{yl},a_{zl})$ for every time step as well as rotational velocity about each axis in each time step.\\
+\begin{math}
+\begin{aligned}[c]
+a_l &=(0,0,0)\\
+&=(1,0,0) \\
+&=(0,0,0) \\
+&=(1,0,0) \\
+&=(0,0,0) \\
+&=(0,0,0) \\
+&=(0,0,0) \\
+&=(0,0,0) \\
+&=(0,0,0) \\
+&=(0,0,0) \\
+&=(0,0,0) 
+\end{aligned}
+\begin{aligned}[c]
+\omega &=(0,0,0) \\
+&=(0,0,0) \\
+&=(0,0,0) \\
+&=(0,1.5,0) \\
+&=(0,0,0) \\
+&=(0,0,0) \\
+&=(0,0,0) \\
+&=(0,0,0) \\
+&=(0,0,0) \\
+&=(0,0,0) \\
+&=(0,0,0) 
+\end{aligned}
+\end{math}
 %\newpage      Command to start a new page dont forget
 
 \end{document}
