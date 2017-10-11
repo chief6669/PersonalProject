@@ -170,7 +170,7 @@ At this point we have generated position$(r_g(t))$ and orientation $(\alpha, \be
 \begin{center}
 \textbf{Example}
 \end{center}
-Lets consider an example set of data. I want my simulated drone to accelerate in the x direction for 1 second, at some point pitch then accelerate in the new direction for one second. The example data set will have $(a_{xl},a_{yl},a_{zl})$ for every time step as well as rotational velocity about each axis in each time step.\\
+Lets consider an example set of data. I want my simulated drone to accelerate in the x direction for 1 second, at some point pitch then accelerate in the new direction for one second. The example data set will have $(a_{xl},a_{yl},a_{zl})$ for every time step as well as rotational velocity$(\omega_{x},\omega_{y},\omega_{x})$ about each axis in each time step.\\
 \begin{math}
 \begin{aligned}[c]
 a_l &=(0,0,0)\\
@@ -199,6 +199,18 @@ a_l &=(0,0,0)\\
 &=(0,0,0) 
 \end{aligned}
 \end{math}
+
+After running the code I get the following 3D plot:
+
+\begin{figure}[H]
+	\centering
+	\textbf{Transformation}\par\medskip
+	\fbox{\includegraphics[scale=.15]{3DTestPlot}}
+	\caption{3D plot of above data}
+	\label{fig:3D}
+\end{figure}
+
+As you can see the the plot demonstrates the the drone went along an axis, pitched, then continued straight in the new direction.
 %\newpage      Command to start a new page dont forget
 
 \end{document}
