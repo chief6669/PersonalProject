@@ -3,9 +3,9 @@ import numpy
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 #--------------------------------------------------------------------------------
-#Note to self I think I did this wrong. I need to predict first, then calculate K
-#I wasnt doing that before I thought the H matrix is the prediction matrix but its
-#not so I need to fix this
+# Generated my sample datat in the file sampleData.csv. Next step is to copy it
+# into this file as a list of sample data that has a gaussian applied to it.
+# Generation of this data is in the file generateSampleData.py
 #--------------------------------------------------------------------------------
 def main():
 	#First define time vector
@@ -62,6 +62,13 @@ def main():
 			 [0, 0, 1]]
 	xData = []
 	yData = []
+	R = [[0, 0, 0],
+		 [0, 0, 0],
+		 [0, 0, 0]]
+
+	Q = [[0, 0, 0],
+		 [0, 0, 0],
+		 [0, 0, 0]]
 	for t in range(1,len(time)):
 		w=angularVelocity[t]
 		al=localAcceleration[t]
@@ -83,7 +90,7 @@ def main():
 		Atranspose = [[1, 0 ,0],
 					  [deltaT, 1, 0],
 					  [math.pow(deltaT,2), deltaT, 1]]
-		Pestimate = numpy.dot(A,numpy.dot(prevP,Atranspose))
+		Pestimate = numpy.dot(A,numpy.dot(prevP,Atranspose)) + Q
 
 		#Measurement update
 		#We will make it simple by doing the math and saying H is identity
@@ -100,19 +107,14 @@ def main():
 		z = numpy.dot(H,sensorReadings)
 
 		#Correction
-		firstK = numpy.dot(Pestimate,H) #since H = H transpose in the identity case
-		inter1 = numpy.dot(H,numpy.dot(Pestimate,H))
-		R = [[0, 0, 0],
-			 [0, 0, 0],
-			 [0, 0, 0]]
-		secondK = numpy.linalg.inv(numpy.add(inter1,R))
-		K = numpy.dot(firstK,secondK)
+		S = numpy.dot(H,numpy.dot(Pestimate,H))+R #since H = H transpose in the identity case
+		K = numpy.dot(Pestimate,numpy.dot(H,numpy.linalg.inv(S)))
 
-		inter2 = z - numpy.dot(H,newPred)
-		newState = newPred + numpy.dot(K,inter2)
+		y = z - numpy.dot(H,newPred)
+		newState = newPred + numpy.dot(K,y)
 		
-		inter3 = I-numpy.dot(K,H)
-		newP = numpy.dot(inter3,Pestimate)
+		inter = I-numpy.dot(K,H)
+		newP = numpy.dot(inter,Pestimate)
 
 		prevState = newState
 
